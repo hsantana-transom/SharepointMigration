@@ -1,0 +1,11 @@
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\bin\Debug\netcoreapp2.1\SharepointConnection.deps.json
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\bin\Debug\netcoreapp2.1\SharepointConnection.runtimeconfig.json
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\bin\Debug\netcoreapp2.1\SharepointConnection.runtimeconfig.dev.json
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\bin\Debug\netcoreapp2.1\SharepointConnection.dll
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.csprojAssemblyReference.cache
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.csproj.CoreCompileInputs.cache
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.AssemblyInfoInputs.cache
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.AssemblyInfo.cs
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\bin\Debug\netcoreapp2.1\SharepointConnection.pdb
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.dll
+C:\Users\usuario\Documents\Visual Studio 2017\Projects\SharepointConnection\SharepointConnection\obj\Debug\netcoreapp2.1\SharepointConnection.pdb
