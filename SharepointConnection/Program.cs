@@ -21,6 +21,8 @@ namespace SharepointConnection
         List<Region> ListaShareRegiones = new List<Region>();
         List<Plaza> ListaSharePlazas = new List<Plaza>();
         List<Tienda> ListaShareTiendas = new List<Tienda>();
+
+
         static void Main(string[] args)
         {
             string siteUrl = "https://wrmdp.sharepoint.com/sites/DemoSite/";
@@ -38,16 +40,35 @@ namespace SharepointConnection
                 s.SharepointData(cc, "Regiones");
                 s.SharepointData(cc, "Plazas");
                 s.SharepointData(cc, "Tiendas");
+
+                s.checkDuplicates("Zonas");
+                s.checkDuplicates("Regiones");
+                s.checkDuplicates("Plazas");
+                s.checkDuplicates("Tiendas");
+
+
                 s.SharepointSave(cc, "Zonas");
+                s.SharepointSave(cc, "Regiones");
+                s.SharepointSave(cc, "Plazas");
+                s.SharepointSave(cc, "Tiendas");
+
+                Console.WriteLine ("Presione una tecla para terminar ...");
+                Console.ReadKey();
 
             }
           
         }
+        /**
+         *  Método que se conecta al sitio de Sharpeoint para guardar la informacion de las listas de SQL
+         *  
+         *  Recibe como parametros el ClientContext para hacer la conexion con el sitio y el nombre de la lista de Sharepoint
+         *  donde se almacenaran los datos
+         */
         private void SharepointSave(ClientContext cc,string shList)
         {
             List listSh = cc.Web.Lists.GetByTitle(shList);
             ListItemCreationInformation itemCreationInfo = new ListItemCreationInformation();
-            ListItem itemToInsert = listSh.AddItem(itemCreationInfo);
+            ListItem itemToInsert;// = listSh.AddItem(itemCreationInfo);
 
             int retryAttempts = 0;
             int Attempts = 5;
@@ -56,6 +77,7 @@ namespace SharepointConnection
                 case "Zonas":
                     ListaZonas.ForEach(z =>
                     {
+                        itemToInsert = listSh.AddItem(itemCreationInfo);
                         retryAttempts = 0;
                         itemToInsert["IdZona"] = z.IdZona;
                         itemToInsert["Nombre"] = z.nombreZona;
@@ -95,6 +117,7 @@ namespace SharepointConnection
                 case "Regiones":
                     ListaRegiones.ForEach(r =>
                     {
+                        itemToInsert = listSh.AddItem(itemCreationInfo);
                         retryAttempts = 0;
                         itemToInsert["IdRegion"] = r.Idregion;
                         itemToInsert["IdZona"] = r.IdZona;
@@ -134,6 +157,7 @@ namespace SharepointConnection
                 case "Plazas":
                     ListaPlazas.ForEach(p =>
                     {
+                        itemToInsert = listSh.AddItem(itemCreationInfo);
                         retryAttempts = 0;
                         itemToInsert["IdPlaza"] = p.IdPlaza;
                         itemToInsert["IdRegion"] = p.IdRegion;
@@ -174,6 +198,7 @@ namespace SharepointConnection
                 case "Tiendas":
                     ListaTiendas.ForEach(t =>
                     {
+                        itemToInsert = listSh.AddItem(itemCreationInfo);
                         retryAttempts = 0;
                         itemToInsert["IdTienda"] = t.IdTienda;
                         itemToInsert["IdPlaza"] = t.IdPlaza;
@@ -214,6 +239,13 @@ namespace SharepointConnection
             }
 
         }
+
+        /**
+         * Método que se conecta a las listas de Sharepoint para obterner los datos
+         * 
+         * Recibe como parmetros el clientContext para la conexion al sitio y el nombre de la lista donde 
+         * se obtendran los datos
+         */
         private void SharepointData(ClientContext cc, string listName)
         {
             List targetList = cc.Web.Lists.GetByTitle(listName);
@@ -229,7 +261,7 @@ namespace SharepointConnection
                     switch (listName)
                     {
                         case "Zonas":
-                            Zona z = new Zona(Convert.ToInt32(item["IdZona"]),item["Nombre"].ToString(),item["Activo"].ToString());
+                            Zona z = new Zona(Convert.ToInt32(item["IdZona"]),item["Nombre"].ToString(),item["Activo"].ToString()=="True"? "1" : "0");
                             ListaShareZonas.Add(z);
 
                         break;
@@ -257,7 +289,11 @@ namespace SharepointConnection
                 Console.WriteLine(ex.Message);
             }
         }
-
+        /**
+            Método que conecta a la base de datos y llena las listas
+            
+            Recibe como parametro el nombre de la lista a consultar(Zonas,Regiones,Plazas,Tiendas)
+        */
         private void SQLConnection(string sqlTable)
         {
             conn.ConnectionString =
@@ -318,6 +354,132 @@ namespace SharepointConnection
             {
                 Console.WriteLine(ex.Message);
             }
+        }
+        
+        /*
+            Método para verificar items existentes o cambios en los items.
+            - Si el Item ya existe en las listas de Sharepoint se elimina de la Lista de los items de SQL
+            - Si el item existe y cuenta con algun cambio se guardara en archivo CSV
+
+            Recibe como parámetro el nombre de la lista a verificar(Zonas,Regiones,Plazas,Tiendas)
+
+        */
+        private void checkDuplicates(string listName)
+        {
+            DataTable table = new DataTable();
+            CSVUtlity file = new CSVUtlity();
+            switch (listName)
+            {
+                case "Zonas":
+                    table.Columns.Add("ID", typeof(int));
+                    table.Columns.Add("Sharepoint Nombre Zona", typeof(string));
+                    table.Columns.Add("Sharepoint Activo", typeof(string));
+                    table.Columns.Add("SQL Nombre Zona", typeof(string));
+                    table.Columns.Add("SQL Activo", typeof(string));
+
+                    if (ListaZonas.Count > 0 && ListaShareZonas.Count > 0)
+                    {
+                        List<Zona> listaAux = new List<Zona>(ListaZonas);
+                        
+                        listaAux.ForEach(z=> {
+                            var item = ListaShareZonas.Where(sItem => sItem.IdZona == z.IdZona);
+                            foreach (var zona in item)
+                            {
+                                if (zona.nombreZona != z.nombreZona || zona.activo != z.activo)
+                                {
+                                    table.Rows.Add(z.IdZona, zona.nombreZona, zona.activo, z.nombreZona, z.activo);
+                                }
+                                ListaZonas.RemoveAt(ListaZonas.FindIndex(zone => zone.IdZona == z.IdZona));
+
+                            }
+                           
+                        });
+                    }
+                    
+                    file.ToCSV(table, "C:\\CSVFiles\\ZonasCambios");
+
+                break;
+                case "Regiones":
+                    table.Columns.Add("ID", typeof(int));
+                    table.Columns.Add("Sharepoint Nombre Región", typeof(string));
+                    table.Columns.Add("Sharepoint IdZona", typeof(string));
+                    table.Columns.Add("SQL Nombre Región", typeof(string));
+                    table.Columns.Add("SQL IdZona", typeof(string));
+                    if (ListaRegiones.Count > 0 && ListaShareRegiones.Count > 0)
+                    {
+                        List<Region> listaAux = new List<Region>(ListaRegiones);
+                        listaAux.ForEach(r =>
+                        {
+                            var item = ListaShareRegiones.Where(sItem => sItem.Idregion == r.Idregion);
+                            foreach (var region in item)
+                            {
+                                if (region.IdZona != r.IdZona || region.nombreRegion != r.nombreRegion)
+                                {
+                                    table.Rows.Add(r.Idregion, region.nombreRegion, region.IdZona, r.nombreRegion, r.IdZona);
+                                }
+                                ListaRegiones.RemoveAt(ListaRegiones.FindIndex(reg=> reg.Idregion == r.Idregion));
+
+                            }
+                        });
+                    }
+                    file.ToCSV(table, "C:\\CSVFiles\\RegionesCambios");
+                break;
+
+                case "Plazas":
+                    table.Columns.Add("ID", typeof(int));
+                    table.Columns.Add("Sharepoint Nombre Plaza", typeof(string));
+                    table.Columns.Add("Sharepoint cv Plaza", typeof(string));
+                    table.Columns.Add("Sharepoint Id Región", typeof(string));
+                    table.Columns.Add("SQL Nombre Plaza", typeof(string));
+                    table.Columns.Add("SQL cv Plaza", typeof(string));
+                    table.Columns.Add("SQL Id Región", typeof(string));
+                    if (ListaPlazas.Count > 0 && ListaSharePlazas.Count > 0)
+                    {
+                        List<Plaza> listaAux = new List<Plaza>(ListaPlazas);
+                        listaAux.ForEach(p =>
+                        {
+                            var item = ListaSharePlazas.Where(sItem => sItem.IdPlaza == p.IdPlaza);
+                            foreach (var plaza in item)
+                            {
+                                if (plaza.IdRegion != p.IdRegion || plaza.nombrePlaza != p.nombrePlaza || plaza.cPlaza != p.cPlaza)
+                                {
+                                    table.Rows.Add(p.IdPlaza, plaza.nombrePlaza, plaza.cPlaza, plaza.IdRegion, p.nombrePlaza, p.cPlaza, p.IdRegion);
+                                }
+                                ListaPlazas.RemoveAt(ListaPlazas.FindIndex(pla => pla.IdPlaza == p.IdPlaza));
+                            }
+                        });
+                    }
+                    file.ToCSV(table, "C:\\CSVFiles\\PlazasCambios");
+                break;
+                case "Tiendas":
+                    table.Columns.Add("ID", typeof(int));
+                    table.Columns.Add("Sharepoint Nombre Tienda", typeof(string));
+                    table.Columns.Add("Sharepoint cv Tienda", typeof(string));
+                    table.Columns.Add("Sharepoint Id Plaza", typeof(string));
+                    table.Columns.Add("SQL Nombre Tienda", typeof(string));
+                    table.Columns.Add("SQL cv Tienda", typeof(string));
+                    table.Columns.Add("SQL Id Plaza", typeof(string));
+                    if (ListaTiendas.Count > 0 && ListaShareTiendas.Count > 0)
+                    {
+                        List<Tienda> listaAux = new List<Tienda>(ListaTiendas);
+
+                        listaAux.ForEach(t =>
+                        {
+                            var item = ListaShareTiendas.Where(sItem => sItem.IdTienda == t.IdTienda);
+                            foreach (var tienda in item)
+                            {
+                                if (tienda.IdPlaza != t.IdPlaza || tienda.nombreTienda != t.nombreTienda || tienda.cTienda != t.cTienda)
+                                {
+                                    table.Rows.Add(t.IdTienda, tienda.nombreTienda, tienda.cTienda, tienda.IdPlaza, t.nombreTienda, t.cTienda, t.IdPlaza);
+                                }
+                                ListaTiendas.RemoveAt(ListaTiendas.FindIndex(ti => ti.IdTienda == t.IdTienda));
+                            }
+                        });
+                    }
+                    file.ToCSV(table, "C:\\CSVFiles\\TiendasCambios");
+                break;
+            }
+
         }
     }
 }
