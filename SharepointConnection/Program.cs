@@ -6,6 +6,8 @@ using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.IO;
+
 
 namespace SharepointConnection  
 {
@@ -21,42 +23,95 @@ namespace SharepointConnection
         List<Region> ListaShareRegiones = new List<Region>();
         List<Plaza> ListaSharePlazas = new List<Plaza>();
         List<Tienda> ListaShareTiendas = new List<Tienda>();
-
-
+        
         static void Main(string[] args)
         {
+
             string siteUrl = "https://wrmdp.sharepoint.com/sites/DemoSite/";
             Program s = new Program();
-            s.SQLConnection("Zonas");
-            s.SQLConnection("Regiones");
-            s.SQLConnection("PlazasEmpoderadas");
-            s.SQLConnection("Tiendas");
-            using (var cc = new AuthenticationManager().GetAzureADAppOnlyAuthenticatedContext(siteUrl, "59f59021-604f-40f1-b88f-344bc3c63469", "wrmdp.onmicrosoft.com", @"C:\Windows\System32\hexaware.pfx", "dev2022"))
+
+
+            string selectedOption = s.menu();
+
+            if (selectedOption != "1" && selectedOption != "2")
+                Console.WriteLine("Opción no válida");
+            if(selectedOption.Trim()=="1")
+                s.EncryptFile();
+            if (selectedOption.Trim() == "2")
             {
-                cc.Load(cc.Web, p => p.Title);
-                cc.ExecuteQuery();
-                Console.WriteLine("Succesful Connection: " + cc.Web.Title);
-                s.SharepointData(cc, "Zonas");
-                s.SharepointData(cc, "Regiones");
-                s.SharepointData(cc, "Plazas");
-                s.SharepointData(cc, "Tiendas");
+                string pass=s.DecryptPass();
 
-                s.checkDuplicates("Zonas");
-                s.checkDuplicates("Regiones");
-                s.checkDuplicates("Plazas");
-                s.checkDuplicates("Tiendas");
+                if (pass != "Password Incorrecto")
+                {
+
+                    s.SQLConnection("Zonas");
+                    s.SQLConnection("Regiones");
+                    s.SQLConnection("PlazasEmpoderadas");
+                    s.SQLConnection("Tiendas");
+                    using (var cc = new AuthenticationManager().GetAzureADAppOnlyAuthenticatedContext(siteUrl, "59f59021-604f-40f1-b88f-344bc3c63469", "wrmdp.onmicrosoft.com", @"C:\Windows\System32\hexaware.pfx", pass))
+                    {
+                        cc.Load(cc.Web, p => p.Title);
+                        cc.ExecuteQuery();
+                        Console.WriteLine("Succesful Connection: " + cc.Web.Title);
+                        s.SharepointData(cc, "Zonas");
+                        s.SharepointData(cc, "Regiones");
+                        s.SharepointData(cc, "Plazas");
+                        s.SharepointData(cc, "Tiendas");
+
+                        s.checkDuplicates("Zonas");
+                        s.checkDuplicates("Regiones");
+                        s.checkDuplicates("Plazas");
+                        s.checkDuplicates("Tiendas");
 
 
-                s.SharepointSave(cc, "Zonas");
-                s.SharepointSave(cc, "Regiones");
-                s.SharepointSave(cc, "Plazas");
-                s.SharepointSave(cc, "Tiendas");
-
-                Console.WriteLine ("Presione una tecla para terminar ...");
-                Console.ReadKey();
-
+                        s.SharepointSave(cc, "Zonas");
+                        s.SharepointSave(cc, "Regiones");
+                        s.SharepointSave(cc, "Plazas");
+                        s.SharepointSave(cc, "Tiendas");
+                    }
+                }
             }
-          
+            Console.WriteLine("Presione una tecla para terminar ...");
+            Console.ReadKey();
+
+
+        }
+        public string menu()
+        {
+            Console.WriteLine("Selecciona una opcion.");
+            Console.WriteLine("1. Guardar Password Encriptado.");
+            Console.WriteLine("2. Leer Archivo con password y conectarse a Sharepoint.");
+            Console.Write("Opción: ");
+            string selectedOption = Console.ReadLine();
+            return selectedOption;
+        }
+        public void EncryptFile()
+        {
+
+            Console.WriteLine("Please enter a string to encrypt:");
+            string plaintext = Console.ReadLine();
+            Console.WriteLine("Please enter a password to use:");
+            string password = Console.ReadLine();
+            Console.WriteLine("");
+
+            Console.WriteLine("Your encrypted string is:");
+            string encryptedstring = StringCipher.Encrypt(plaintext, password);
+            Console.WriteLine(encryptedstring);
+            Console.WriteLine("");
+
+           
+        }
+        public string DecryptPass()
+        {
+            Console.WriteLine("Please enter a password to decrypt:");
+            string password = Console.ReadLine();
+
+            string encryptedstring=System.IO.File.ReadAllText("C:\\Users\\usuario\\Documents\\hexaware\\passAzure.txt");
+            Console.WriteLine("Your decrypted string is:");
+            string decryptedstring = StringCipher.Decrypt(encryptedstring, password);
+            return decryptedstring; 
+           
+
         }
         /**
          *  Método que se conecta al sitio de Sharpeoint para guardar la informacion de las listas de SQL
